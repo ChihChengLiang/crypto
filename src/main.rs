@@ -1,64 +1,78 @@
 use std::{
     fmt::Display,
-    ops::{Add, Mul},
+    ops::{Add, Index, IndexMut, Mul},
 };
 
+trait Zero {
+    fn zero() -> Self;
+}
+
 #[derive(Debug, Clone)]
-struct PrimeField {
+struct PrimeField<const P: u64> {
     n: u64,
-    p: u64,
 }
 
-impl PrimeField {
-    fn new(n: u64, p: u64) -> Self {
-        Self { n: n % p, p }
+impl<const P: u64> PrimeField<P> {
+    fn new(n: u64) -> Self {
+        Self { n: n % P }
     }
 }
-impl Display for PrimeField {
+impl<const P: u64> Display for PrimeField<P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Fp{}", self.n)
+        write!(f, "F{P}{{{}}}", self.n)
     }
 }
 
-impl Add for PrimeField {
+impl<const P: u64> Zero for PrimeField<P> {
+    fn zero() -> Self {
+        Self { n: 0 }
+    }
+}
+
+impl<const P: u64> Add for PrimeField<P> {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         Self {
-            n: (self.n + rhs.n) % self.p,
-            p: self.p,
+            n: (self.n + rhs.n) % P,
         }
     }
 }
 
-impl Mul for PrimeField {
+impl<const P: u64> Mul for PrimeField<P> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
         Self {
-            n: (self.n * rhs.n) % self.p,
-            p: self.p,
+            n: (self.n * rhs.n) % P,
         }
     }
 }
 
-impl PartialEq for PrimeField {
+impl<const P: u64> PartialEq for PrimeField<P> {
     fn eq(&self, other: &Self) -> bool {
-        assert_eq!(self.p, other.p);
         self.n == other.n
     }
 }
 
-fn fp11(n: u64) -> PrimeField {
-    PrimeField::new(n, 11)
+fn fp11(n: u64) -> PrimeField<11> {
+    PrimeField::new(n)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Matrix<const NROW: usize, const NCOL: usize, ELEMENT> {
     elements: Vec<Vec<ELEMENT>>,
 }
 
-impl<const NROW: usize, const NCOL: usize, ELEMENT: Clone> Matrix<NROW, NCOL, ELEMENT> {
+impl<const NROW: usize, const NCOL: usize, ELEMENT: Zero + Clone> Matrix<NROW, NCOL, ELEMENT> {
+    fn zero() -> Self {
+        Self {
+            elements: (0..NROW)
+                .map(|_| (0..NCOL).map(|_| ELEMENT::zero()).collect::<Vec<_>>())
+                .collect::<Vec<_>>(),
+        }
+    }
+
     fn new(elements: &[&[ELEMENT]]) -> Self {
         Self {
             elements: elements
@@ -86,7 +100,7 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Clone + Display> Display
     }
 }
 
-impl<const NROW: usize, const NCOL: usize, ELEMENT: Clone + Add<Output = ELEMENT>> Add
+impl<const NROW: usize, const NCOL: usize, ELEMENT: Add<Output = ELEMENT> + Clone> Add
     for Matrix<NROW, NCOL, ELEMENT>
 {
     type Output = Self;
@@ -118,6 +132,52 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: PartialEq> PartialEq
     }
 }
 
+impl<const NROW: usize, const NCOL: usize, ELEMENT> Index<(usize, usize)>
+    for Matrix<NROW, NCOL, ELEMENT>
+{
+    type Output = ELEMENT;
+
+    fn index(&self, (row, col): (usize, usize)) -> &Self::Output {
+        self.elements
+            .get(row)
+            .expect("row exists")
+            .get(col)
+            .expect("elem exists")
+    }
+}
+
+impl<const NROW: usize, const NCOL: usize, ELEMENT> IndexMut<(usize, usize)>
+    for Matrix<NROW, NCOL, ELEMENT>
+{
+    fn index_mut(&mut self, (row, col): (usize, usize)) -> &mut Self::Output {
+        &mut self.elements[row][col]
+    }
+}
+
+impl<
+        const NROW: usize,
+        const M: usize,
+        const NCOL: usize,
+        ELEMENT: Mul<Output = ELEMENT> + Add<Output = ELEMENT> + Zero + Clone,
+    > Mul<Matrix<M, NCOL, ELEMENT>> for Matrix<NROW, M, ELEMENT>
+{
+    type Output = Matrix<NROW, NCOL, ELEMENT>;
+
+    fn mul(self, rhs: Matrix<M, NCOL, ELEMENT>) -> Self::Output {
+        let mut result = Matrix::zero();
+        for i in 0..NROW {
+            for j in 0..M {
+                let mut sum = ELEMENT::zero();
+                for k in 0..NCOL {
+                    sum = sum + self[(i, k)].clone() * rhs[(k, j)].clone();
+                }
+                result[(i, j)] = sum;
+            }
+        }
+        result
+    }
+}
+
 mod tests {
     use super::*;
 
@@ -130,13 +190,13 @@ mod tests {
     }
     #[test]
     fn test_matrix() {
-        let matrix_a: Matrix<2, 2, PrimeField> =
-            Matrix::new(&[&[fp11(3), fp11(4)], &[fp11(5), fp11(6)]]);
-        let matrix_b: Matrix<2, 2, PrimeField> =
-            Matrix::new(&[&[fp11(7), fp11(8)], &[fp11(9), fp11(10)]]);
-        let a_plus_b: Matrix<2, 2, PrimeField> =
-            Matrix::new(&[&[fp11(10), fp11(1)], &[fp11(3), fp11(5)]]);
-        assert_eq!(matrix_a + matrix_b, a_plus_b)
+        let matrix_a: Matrix<2, 2, _> = Matrix::new(&[&[fp11(3), fp11(4)], &[fp11(5), fp11(6)]]);
+        let matrix_b: Matrix<2, 2, _> = Matrix::new(&[&[fp11(7), fp11(8)], &[fp11(9), fp11(10)]]);
+        let a_plus_b: Matrix<2, 2, _> = Matrix::new(&[&[fp11(10), fp11(1)], &[fp11(3), fp11(5)]]);
+        let a_mul_b = Matrix::new(&[&[fp11(2), fp11(9)], &[fp11(1), fp11(1)]]);
+        println!("Matrix a {matrix_a}");
+        assert_eq!(matrix_a.clone() + matrix_b.clone(), a_plus_b);
+        assert_eq!(matrix_a * matrix_b, a_mul_b)
     }
 }
 
