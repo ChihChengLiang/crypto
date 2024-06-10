@@ -17,6 +17,59 @@ impl DataPoint {
             y: y.into(),
         }
     }
+
+    fn try_key(&self, key: &Matrix<4, 1, PrimeField<11>>, tolerance: u64) -> bool {
+        let error = self.y.clone() - (self.xs.clone() * key.clone())[(0, 0)].clone();
+        error.check_tolerance(tolerance)
+    }
+}
+
+struct DataSet {
+    data: Vec<DataPoint>,
+}
+type Key = Matrix<4, 1, PrimeField<11>>;
+impl DataSet {
+    fn new(values: &[((u64, u64, u64, u64), u64)]) -> Self {
+        Self {
+            data: values
+                .iter()
+                .map(|((x1, x2, x3, x4), y)| DataPoint::new(&[*x1, *x2, *x3, *x4], *y))
+                .collect::<Vec<_>>(),
+        }
+    }
+
+    fn search(&self) -> (Key, usize) {
+        let tolerance = 1;
+        let mut best_key: Key = Matrix::zero();
+        let mut best_score = 0;
+        let mut iteration = 0;
+        for a1 in 0..11 {
+            for a2 in 0..11 {
+                for a3 in 0..11 {
+                    for a4 in 0..11 {
+                        let key: Key = Matrix::new(&[a1, a2, a3, a4]);
+                        let mut score = 0;
+                        for point in self.data.iter() {
+                            let success = point.try_key(&key, tolerance);
+                            if success {
+                                score += 1;
+                            }
+                        }
+                        if score >= best_score {
+                            best_key = key;
+                            best_score = score;
+                        }
+                        if iteration % 1000 == 0 {
+                            let percent = iteration as f64 / 14641.0 * 100.0;
+                            println!("{percent:.0}% | best score {best_score}");
+                        }
+                        iteration += 1;
+                    }
+                }
+            }
+        }
+        (best_key, best_score)
+    }
 }
 
 fn main() {
@@ -56,4 +109,16 @@ fn main() {
         ((8, 3, 2, 7), 8),
         ((4, 6, 6, 3), 2),
     ];
+    let blue_set = DataSet::new(&blue_set);
+    let red_set = DataSet::new(&red_set);
+    println!("searching blue");
+    let blue_result = blue_set.search();
+    println!("blue result {:?}", blue_result);
+
+    println!("searching red");
+    let red_result = red_set.search();
+
+    println!("Summary");
+    println!("red result {:?} {}", red_result, red_set.data.len());
+    println!("blue result {:?} {}", blue_result, blue_set.data.len());
 }

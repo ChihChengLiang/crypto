@@ -15,7 +15,7 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Zero + Clone> Matrix<NROW, N
     fn size() -> usize {
         NROW * NCOL
     }
-    fn zero() -> Self {
+    pub(crate) fn zero() -> Self {
         Self::new(
             &repeat(ELEMENT::zero())
                 .take(Self::size())
@@ -102,9 +102,9 @@ impl<
     fn mul(self, rhs: Matrix<M, NCOL, ELEMENT>) -> Self::Output {
         let mut result = Matrix::zero();
         for i in 0..NROW {
-            for j in 0..M {
+            for j in 0..NCOL {
                 let mut sum = ELEMENT::zero();
-                for k in 0..NCOL {
+                for k in 0..M {
                     sum = sum + self[(i, k)].clone() * rhs[(k, j)].clone();
                 }
                 result[(i, j)] = sum;
@@ -113,6 +113,7 @@ impl<
         result
     }
 }
+
 
 mod tests {
     use crate::ff::PrimeField;

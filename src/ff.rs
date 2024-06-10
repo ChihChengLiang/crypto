@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Div, Mul},
+    ops::{Add, Div, Mul, Sub},
 };
 
 use crate::common::Zero;
@@ -15,6 +15,10 @@ impl<const P: u64> PrimeField<P> {
         Self { n: n % P }
     }
 
+    fn neg(&self) -> Self {
+        Self { n: P - self.n }
+    }
+
     /// Inverse via Fermat's little theorem
     fn invert(&self) -> Self {
         assert_ne!(self.n, 0, "Can't invert zero");
@@ -23,8 +27,12 @@ impl<const P: u64> PrimeField<P> {
         }
     }
 
-    fn is_zero(&self) -> bool {
+    pub(crate) fn is_zero(&self) -> bool {
         self.n == 0
+    }
+
+    pub(crate) fn check_tolerance(&self, tolerance: u64) -> bool {
+        self.n <= tolerance || (P - self.n) <= tolerance
     }
 }
 impl<const P: u64> Display for PrimeField<P> {
@@ -46,6 +54,14 @@ impl<const P: u64> Add for PrimeField<P> {
         Self {
             n: (self.n + rhs.n) % P,
         }
+    }
+}
+
+impl<const P: u64> Sub for PrimeField<P> {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self + rhs.neg()
     }
 }
 
@@ -92,8 +108,19 @@ mod tests {
         let b = fp11(5);
         assert_eq!(a.clone() + b.clone(), fp11(8));
         assert_eq!(a * b, fp11(4));
-        for i in 1..10 {
+        for i in 1..11 {
             assert_eq!(fp11(i) / fp11(i), fp11(1), "Identity for {i} unsatisfied")
+        }
+    }
+
+    #[test]
+    fn test_tolerance() {
+        let tolerance = 2;
+        for i in 0..11 {
+            assert_eq!(
+                fp11(i).check_tolerance(tolerance),
+                [0, 1, 2, 10, 9, 8].contains(&i)
+            )
         }
     }
 }
