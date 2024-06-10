@@ -74,6 +74,12 @@ impl<const P: u64> PartialEq for PrimeField<P> {
     }
 }
 
+impl<const P: u64> From<u64> for PrimeField<P> {
+    fn from(n: u64) -> Self {
+        Self::new(n)
+    }
+}
+
 pub(crate) fn fp11(n: u64) -> PrimeField<11> {
     PrimeField::new(n)
 }
