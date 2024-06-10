@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Mul},
+    ops::{Add, Div, Mul},
 };
 
 use crate::common::Zero;
@@ -21,6 +21,10 @@ impl<const P: u64> PrimeField<P> {
         Self {
             n: self.n.pow((P - 2).try_into().unwrap()) % P,
         }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.n == 0
     }
 }
 impl<const P: u64> Display for PrimeField<P> {
@@ -55,6 +59,15 @@ impl<const P: u64> Mul for PrimeField<P> {
     }
 }
 
+impl<const P: u64> Div for PrimeField<P> {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        assert!(!rhs.is_zero());
+        self * rhs.invert()
+    }
+}
+
 impl<const P: u64> PartialEq for PrimeField<P> {
     fn eq(&self, other: &Self) -> bool {
         self.n == other.n
@@ -74,11 +87,7 @@ mod tests {
         assert_eq!(a.clone() + b.clone(), fp11(8));
         assert_eq!(a * b, fp11(4));
         for i in 1..10 {
-            assert_eq!(
-                fp11(i) * fp11(i).invert(),
-                fp11(1),
-                "Identity for {i} unsatisfied"
-            )
+            assert_eq!(fp11(i) / fp11(i), fp11(1), "Identity for {i} unsatisfied")
         }
     }
 }
