@@ -14,6 +14,14 @@ impl<const P: u64> PrimeField<P> {
     fn new(n: u64) -> Self {
         Self { n: n % P }
     }
+
+    /// Inverse via Fermat's little theorem
+    fn invert(&self) -> Self {
+        assert_ne!(self.n, 0, "Can't invert zero");
+        Self {
+            n: self.n.pow((P - 2).try_into().unwrap()) % P,
+        }
+    }
 }
 impl<const P: u64> Display for PrimeField<P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -65,5 +73,12 @@ mod tests {
         let b = fp11(5);
         assert_eq!(a.clone() + b.clone(), fp11(8));
         assert_eq!(a * b, fp11(4));
+        for i in 1..10 {
+            assert_eq!(
+                fp11(i) * fp11(i).invert(),
+                fp11(1),
+                "Identity for {i} unsatisfied"
+            )
+        }
     }
 }
