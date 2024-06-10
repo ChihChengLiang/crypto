@@ -23,7 +23,7 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Zero + Clone> Matrix<NROW, N
         )
     }
 
-    fn new(elements: &[impl Into<ELEMENT> + Clone]) -> Self {
+    pub(crate) fn new(elements: &[impl Into<ELEMENT> + Clone]) -> Self {
         assert_eq!(elements.len(), Self::size());
         Self {
             elements: elements.iter().map(|x| (*x).clone().into()).collect(),
