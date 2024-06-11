@@ -32,7 +32,7 @@ impl<const P: u64> PrimeField<P> {
     }
 
     pub fn check_tolerance(&self, tolerance: u64) -> bool {
-        self.n <= tolerance || (P - self.n) <= tolerance
+        self.n <= tolerance
     }
 }
 impl<const P: u64> Display for PrimeField<P> {
