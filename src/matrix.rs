@@ -7,7 +7,7 @@ use std::{
 use crate::common::Zero;
 
 #[derive(Debug, Clone)]
-pub(crate) struct Matrix<const NROW: usize, const NCOL: usize, ELEMENT> {
+pub struct Matrix<const NROW: usize, const NCOL: usize, ELEMENT> {
     elements: Vec<ELEMENT>,
 }
 
@@ -15,7 +15,7 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Zero + Clone> Matrix<NROW, N
     fn size() -> usize {
         NROW * NCOL
     }
-    pub(crate) fn zero() -> Self {
+    pub fn zero() -> Self {
         Self::new(
             &repeat(ELEMENT::zero())
                 .take(Self::size())
@@ -23,7 +23,7 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Zero + Clone> Matrix<NROW, N
         )
     }
 
-    pub(crate) fn new(elements: &[impl Into<ELEMENT> + Clone]) -> Self {
+    pub fn new(elements: &[impl Into<ELEMENT> + Clone]) -> Self {
         assert_eq!(elements.len(), Self::size());
         Self {
             elements: elements.iter().map(|x| (*x).clone().into()).collect(),
@@ -113,7 +113,6 @@ impl<
         result
     }
 }
-
 
 mod tests {
     use crate::ff::PrimeField;

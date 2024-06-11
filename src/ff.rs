@@ -6,7 +6,7 @@ use std::{
 use crate::common::Zero;
 
 #[derive(Debug, Clone)]
-pub(crate) struct PrimeField<const P: u64> {
+pub struct PrimeField<const P: u64> {
     n: u64,
 }
 
@@ -31,7 +31,7 @@ impl<const P: u64> PrimeField<P> {
         self.n == 0
     }
 
-    pub(crate) fn check_tolerance(&self, tolerance: u64) -> bool {
+    pub fn check_tolerance(&self, tolerance: u64) -> bool {
         self.n <= tolerance || (P - self.n) <= tolerance
     }
 }

@@ -1,9 +1,5 @@
-use ff::PrimeField;
-use matrix::Matrix;
-
-mod common;
-mod ff;
-mod matrix;
+//! Brute force https://notes.0xparc.org/notes/learning-with-errors-exercise
+use crypto::{Matrix, PrimeField};
 
 struct DataPoint {
     xs: Matrix<1, 4, PrimeField<11>>,
