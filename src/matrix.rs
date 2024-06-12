@@ -34,16 +34,16 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Clone + Display> Display
     for Matrix<NROW, NCOL, ELEMENT>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[\n")?;
+        writeln!(f, "[")?;
         for row in self.elements.chunks_exact(NROW) {
             write!(f, "  [")?;
             for elem in row.iter() {
                 write!(f, "{elem}, ")?;
             }
-            write!(f, "]\n")?;
+            writeln!(f, "]\n")?;
         }
 
-        write!(f, "]\n")
+        writeln!(f, "]")
     }
 }
 
@@ -114,6 +114,7 @@ impl<
     }
 }
 
+#[cfg(test)]
 mod tests {
     use crate::ff::PrimeField;
 

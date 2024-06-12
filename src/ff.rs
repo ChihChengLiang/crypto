@@ -96,11 +96,13 @@ impl<const P: u64> From<u64> for PrimeField<P> {
     }
 }
 
-pub(crate) fn fp11(n: u64) -> PrimeField<11> {
-    PrimeField::new(n)
-}
+#[cfg(test)]
 mod tests {
     use super::*;
+
+    fn fp11(n: u64) -> PrimeField<11> {
+        PrimeField::new(n)
+    }
 
     #[test]
     fn test_prime_field() {
