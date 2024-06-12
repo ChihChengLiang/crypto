@@ -11,7 +11,7 @@ pub struct PrimeField<const P: u64> {
 }
 
 impl<const P: u64> PrimeField<P> {
-    fn new(n: u64) -> Self {
+    pub(crate) fn new(n: u64) -> Self {
         Self { n: n % P }
     }
 
