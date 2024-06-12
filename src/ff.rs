@@ -106,6 +106,8 @@ impl<const P: u64> Raisable for PrimeField<P> {
 
 #[cfg(test)]
 mod tests {
+    use std::iter;
+
     use super::*;
 
     fn fp11(n: u64) -> PrimeField<11> {
@@ -118,9 +120,18 @@ mod tests {
         let b = fp11(5);
         assert_eq!(a.clone() + b.clone(), fp11(8));
         assert_eq!(a.clone() * b, fp11(4));
-        assert_eq!(a.pow(5), fp11(1));
         for i in 1..11 {
-            assert_eq!(fp11(i) / fp11(i), fp11(1), "Identity for {i} unsatisfied")
+            assert_eq!(fp11(i) / fp11(i), fp11(1), "Identity for {i} unsatisfied");
+        }
+        // Test power
+        assert_eq!(a.pow(5), fp11(1));
+        for i in 0..11 {
+            for j in 0..11 {
+                assert_eq!(
+                    fp11(i).pow(j),
+                    iter::repeat(fp11(i)).take(j).fold(fp11(1), |a, b| a * b)
+                )
+            }
         }
     }
 
