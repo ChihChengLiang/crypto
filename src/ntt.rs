@@ -90,14 +90,12 @@ mod tests {
 
     #[test]
     fn test_ntt() {
-        let mut poly: [PrimeField<11>; 4] = [1.into(), 2.into(), 3.into(), 4.into()];
-        // domain: 1, 5, 3, 4
-        let omega: PrimeField<11> = 5.into();
-        // Failed why?
-        let evaluations: [PrimeField<11>; 4] = [10.into(), 3.into(), 10.into(), 5.into()];
+        let mut poly: Vec<PrimeField<17>> = (1..=8).map(|x: u64| x.into()).collect();
+        // domain: 1, 2, 4, 8, 16, 15, 13, 9
+        let omega: PrimeField<17> = 2.into();
+        let evaluations = fft_recursive(&poly, omega.clone());
 
-        assert_eq!(fft_recursive(&poly, omega), evaluations);
-        // simple_fft(&mut poly, omega);
-        // assert_eq!(poly, evaluations)
+        simple_fft(&mut poly, omega);
+        assert_eq!(poly, evaluations)
     }
 }
