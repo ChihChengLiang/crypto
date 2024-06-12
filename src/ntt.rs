@@ -1,63 +1,36 @@
-use crate::common::Raisable;
-use core::fmt::Debug;
-use std::ops::{Add, Mul, Sub};
-
-fn fft_recursive<
-    ELEMENT: Debug
-        + Clone
-        + Raisable
-        + Mul<Output = ELEMENT>
-        + Add<Output = ELEMENT>
-        + Sub<Output = ELEMENT>,
->(
-    xs: &[ELEMENT],
-    omega: ELEMENT,
-) -> Vec<ELEMENT> {
+fn fft_recursive<const P: u64>(xs: &[u64], omega: u64) -> Vec<u64> {
     if xs.len() == 1 {
         return xs.to_vec();
     }
-    let omega_sq = omega.clone() * omega.clone();
-    let left = fft_recursive(
-        &xs.iter().step_by(2).cloned().collect::<Vec<_>>(),
-        omega_sq.clone(),
-    );
-    let right = fft_recursive(
+    let omega_sq = omega * omega % P;
+    let left = fft_recursive::<P>(&xs.iter().step_by(2).cloned().collect::<Vec<_>>(), omega_sq);
+    let right = fft_recursive::<P>(
         &xs.iter().skip(1).step_by(2).cloned().collect::<Vec<_>>(),
         omega_sq,
     );
     let mut output = xs.to_vec();
     for (i, (x, y)) in left.iter().zip(right.iter()).enumerate() {
-        let y_times_root = y.clone() * omega.clone().pow(i);
-        output[i] = x.clone() + y_times_root.clone();
-        output[i + left.len()] = x.clone() - y_times_root.clone();
+        let y_times_root = y * omega.pow(i as u32) % P;
+        output[i] = (x + y_times_root) % P;
+        output[i + left.len()] = (x + P - y_times_root) % P;
     }
     output
 }
 
 /// Outputs the evaluation of polynomial a0+ a1x+ ... + a_(L-1)x^(L-1) on 1, omega, ..., omega^(L-1)
-fn simple_fft<
-    ELEMENT: Debug
-        + Clone
-        + Raisable
-        + Mul<Output = ELEMENT>
-        + Add<Output = ELEMENT>
-        + Sub<Output = ELEMENT>,
->(
-    xs: &mut [ELEMENT],
-    omega: ELEMENT,
-) {
+fn simple_fft<const P: u64>(xs: &mut [u64], omega: u64) {
     assert!(xs.len().is_power_of_two());
     let l = xs.len().ilog2();
     for i in 1..=l {
-        let xi = omega.pow(1 << (i - 1));
+        let xi = omega.pow(1 << (i - 1)) % P;
         let m = 1 << (l - i);
         for j in 0..(1 << (i - 1)) {
             let t = 2 * j * m;
             for k in 0..m {
-                let x_tk = xs[t + k].clone();
-                let x_tkm = xs[t + k + m].clone();
-                xs[t + k] = x_tk.clone() + x_tkm.clone();
-                xs[t + k + m] = xi.pow(k) * (x_tk - x_tkm)
+                let x_tk = xs[t + k];
+                let x_tkm = xs[t + k + m];
+                xs[t + k] = (x_tk + x_tkm) % P;
+                xs[t + k + m] = xi.pow(k as u32) * (x_tk + P - x_tkm) % P
             }
         }
     }
@@ -66,36 +39,31 @@ fn simple_fft<
 #[cfg(test)]
 mod tests {
 
-    use crate::PrimeField;
-
     use super::*;
 
     #[test]
     fn test_fft_recursive() {
         // test case from https://vitalik.eth.limo/general/2019/05/12/fft.html
-        let poly: Vec<PrimeField<337>> = [3, 1, 4, 1, 5, 9, 2, 6]
-            .iter()
-            .map(|i: &u64| PrimeField::new(*i))
-            .collect();
-        let omega = PrimeField::<337>::new(85);
-        let evaluation: Vec<PrimeField<337>> = [31, 70, 109, 74, 334, 181, 232, 4]
-            .iter()
-            .map(|i: &u64| PrimeField::new(*i))
-            .collect();
-        assert_eq!(fft_recursive(&poly, omega.clone()), evaluation);
+        let poly = [3, 1, 4, 1, 5, 9, 2, 6];
+        let omega = 85;
+        let evaluation = [31, 70, 109, 74, 334, 181, 232, 4];
+        assert_eq!(fft_recursive::<337>(&poly, omega.clone()), evaluation);
         let mut poly = poly.clone();
-        simple_fft(&mut poly, omega);
+        simple_fft::<337>(&mut poly, omega);
         assert_eq!(poly, evaluation)
     }
 
     #[test]
     fn test_ntt() {
-        let mut poly: Vec<PrimeField<17>> = (1..=8).map(|x: u64| x.into()).collect();
+        let mut poly = [1, 2, 3, 4, 5, 6, 7, 8];
         // domain: 1, 2, 4, 8, 16, 15, 13, 9
-        let omega: PrimeField<17> = 2.into();
-        let evaluations = fft_recursive(&poly, omega.clone());
+        // f(2) = [1 2  3  4  5  6  7 8] *
+        //        [1 2  4  8 16 15 13 9]
+        //  = sum([1 4 12 -2 -5  5  6 4]) = 8
+        let omega = 2;
+        let evaluations = fft_recursive::<17>(&poly, omega.clone());
 
-        simple_fft(&mut poly, omega);
-        assert_eq!(poly, evaluations)
+        simple_fft::<17>(&mut poly, omega);
+        assert_eq!(poly.to_vec(), evaluations)
     }
 }
