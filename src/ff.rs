@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
-use crate::common::Zero;
+use crate::common::{Raisable, Zero};
 
 #[derive(Debug, Clone)]
 pub struct PrimeField<const P: u64> {
@@ -96,6 +96,14 @@ impl<const P: u64> From<u64> for PrimeField<P> {
     }
 }
 
+impl<const P: u64> Raisable for PrimeField<P> {
+    fn pow(&self, power: usize) -> Self {
+        Self {
+            n: self.n.pow(power.try_into().unwrap()) % P,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,7 +117,8 @@ mod tests {
         let a = fp11(3);
         let b = fp11(5);
         assert_eq!(a.clone() + b.clone(), fp11(8));
-        assert_eq!(a * b, fp11(4));
+        assert_eq!(a.clone() * b, fp11(4));
+        assert_eq!(a.pow(5), fp11(1));
         for i in 1..11 {
             assert_eq!(fp11(i) / fp11(i), fp11(1), "Identity for {i} unsatisfied")
         }
