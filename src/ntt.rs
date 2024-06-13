@@ -1,3 +1,17 @@
+fn naive_evaluate<const P: u64>(xs: &[u64], omega: u64) -> Vec<u64> {
+    let mut output = vec![];
+    for i in 0..xs.len() {
+        let domain_i = omega.pow(i as u32) % P;
+        let mut eval = 0;
+        for x in xs.iter().rev() {
+            eval = eval * domain_i % P;
+            eval = (eval + x) % P;
+        }
+        output.push(eval)
+    }
+    output
+}
+
 fn fft_recursive<const P: u64>(xs: &[u64], omega: u64) -> Vec<u64> {
     if xs.len() == 1 {
         return xs.to_vec();
@@ -47,6 +61,7 @@ mod tests {
         let poly = [3, 1, 4, 1, 5, 9, 2, 6];
         let omega = 85;
         let evaluation = [31, 70, 109, 74, 334, 181, 232, 4];
+        assert_eq!(naive_evaluate::<337>(&poly, omega), evaluation);
         assert_eq!(fft_recursive::<337>(&poly, omega.clone()), evaluation);
         let mut poly = poly.clone();
         simple_fft::<337>(&mut poly, omega);
@@ -61,9 +76,9 @@ mod tests {
         //        [1 2  4  8 16 15 13 9]
         //  = sum([1 4 12 -2 -5  5  6 4]) = 8
         let omega = 2;
-        let evaluations = fft_recursive::<17>(&poly, omega.clone());
-
+        let evaluation = fft_recursive::<17>(&poly, omega.clone());
+        assert_eq!(naive_evaluate::<17>(&poly, omega), evaluation);
         simple_fft::<17>(&mut poly, omega);
-        assert_eq!(poly.to_vec(), evaluations)
+        assert_eq!(poly.to_vec(), evaluation)
     }
 }
