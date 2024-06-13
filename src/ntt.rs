@@ -32,6 +32,7 @@ fn fft_recursive<const P: u64>(xs: &[u64], omega: u64) -> Vec<u64> {
 }
 
 /// Outputs the evaluation of polynomial a0+ a1x+ ... + a_(L-1)x^(L-1) on 1, omega, ..., omega^(L-1)
+/// change is in-place and in [bit-reversal](https://en.wikipedia.org/wiki/Bit-reversal_permutation) order.
 fn simple_fft<const P: u64>(xs: &mut [u64], omega: u64) {
     assert!(xs.len().is_power_of_two());
     let l = xs.len().ilog2();
@@ -50,6 +51,18 @@ fn simple_fft<const P: u64>(xs: &mut [u64], omega: u64) {
     }
 }
 
+fn bit_reversal<T: Clone>(xs: &[T]) -> Vec<T> {
+    let mut output = xs.to_vec();
+    let len = xs.len();
+    assert!(len.is_power_of_two());
+    let k = len.ilog2();
+    for (i, x) in xs.iter().enumerate() {
+        let reversed_i = i.reverse_bits() >> (usize::BITS - k);
+        output[reversed_i] = x.clone();
+    }
+    output
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -65,7 +78,7 @@ mod tests {
         assert_eq!(fft_recursive::<337>(&poly, omega.clone()), evaluation);
         let mut poly = poly.clone();
         simple_fft::<337>(&mut poly, omega);
-        assert_eq!(poly, evaluation)
+        assert_eq!(bit_reversal(&poly), evaluation)
     }
 
     #[test]
@@ -79,6 +92,6 @@ mod tests {
         let evaluation = fft_recursive::<17>(&poly, omega.clone());
         assert_eq!(naive_evaluate::<17>(&poly, omega), evaluation);
         simple_fft::<17>(&mut poly, omega);
-        assert_eq!(poly.to_vec(), evaluation)
+        assert_eq!(bit_reversal(&poly), evaluation)
     }
 }
