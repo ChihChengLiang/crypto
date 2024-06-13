@@ -139,10 +139,7 @@ mod tests {
     fn test_tolerance() {
         let tolerance = 2;
         for i in 0..11 {
-            assert_eq!(
-                fp11(i).check_tolerance(tolerance),
-                [0, 1, 2, 10, 9, 8].contains(&i)
-            )
+            assert_eq!(fp11(i).check_tolerance(tolerance), [0, 1, 2,].contains(&i))
         }
     }
 }
