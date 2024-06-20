@@ -3,7 +3,10 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
-use crate::common::{Raisable, Zero};
+use crate::{
+    common::{Raisable, Zero},
+    utils::round_frac2int,
+};
 
 #[derive(Debug, Clone)]
 pub struct PrimeField<const P: u64> {
@@ -33,6 +36,10 @@ impl<const P: u64> PrimeField<P> {
 
     pub fn check_tolerance(&self, tolerance: u64) -> bool {
         self.n <= tolerance
+    }
+
+    pub fn round_2int(&self, q: u64) -> u64 {
+        round_frac2int(self.n, q)
     }
 }
 impl<const P: u64> Display for PrimeField<P> {
