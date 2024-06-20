@@ -3,6 +3,8 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
+use rand::distributions::{Distribution, Standard, Uniform};
+
 use crate::{
     common::{Raisable, Zero},
     utils::round_frac2int,
@@ -108,6 +110,12 @@ impl<const P: u64> Raisable for PrimeField<P> {
         Self {
             n: self.n.pow(power.try_into().unwrap()) % P,
         }
+    }
+}
+
+impl<const P: u64> Distribution<PrimeField<P>> for Standard {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> PrimeField<P> {
+        PrimeField::new(Uniform::new(0, P).sample(rng))
     }
 }
 

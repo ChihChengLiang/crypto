@@ -2,8 +2,8 @@
 
 use std::iter::repeat;
 
-use crypto::Zero;
 use crypto::{Matrix, PrimeField};
+use rand::{thread_rng, Rng};
 
 type F11 = PrimeField<11>;
 type VecF11 = Matrix<5, 1, F11>;
@@ -14,10 +14,10 @@ type Cipher = (VecF11, F11);
 
 const Q: u64 = 11;
 
-fn key_gen() -> (PublicKey, SecretKey) {
-    let sk: VecF11 = Matrix::new(&repeat(0).take(5).collect::<Vec<_>>());
-    let a: Matrix<5, 5, F11> = Matrix::new(&repeat(0).take(25).collect::<Vec<_>>());
-    let e: VecF11 = Matrix::new(&repeat(0).take(5).collect::<Vec<_>>());
+fn key_gen<R: Rng + ?Sized>(rng: &mut R) -> (PublicKey, SecretKey) {
+    let sk: VecF11 = rng.gen();
+    let a: Matrix<5, 5, F11> = rng.gen();
+    let e: VecF11 = rng.gen();
     let b = a.clone() * sk.clone() + e;
     ((a, b), sk)
 }
@@ -39,8 +39,10 @@ fn decrypt(c: Cipher, sk: SecretKey) -> Message {
 }
 
 fn main() {
-    let (pk, sk) = key_gen();
-    let m = true;
+    let mut rng = thread_rng();
+    let (pk, sk) = key_gen(&mut rng);
+    println!("pk {pk:?} sk {sk}");
+    let m = rng.gen();
     let cipher = encrypt(m, pk);
     let m_decrypted = decrypt(cipher, sk);
     assert_eq!(m, m_decrypted)

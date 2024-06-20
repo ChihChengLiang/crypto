@@ -1,8 +1,10 @@
 use std::{
     fmt::Display,
-    iter::repeat,
+    iter::{repeat, repeat_with},
     ops::{Add, Index, IndexMut, Mul},
 };
+
+use rand::distributions::{Distribution, Standard};
 
 use crate::common::Zero;
 
@@ -122,6 +124,20 @@ impl<
             }
         }
         result
+    }
+}
+
+impl<const NROW: usize, const NCOL: usize, ELEMENT> Distribution<Matrix<NROW, NCOL, ELEMENT>>
+    for Standard
+where
+    Standard: Distribution<ELEMENT>,
+{
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Matrix<NROW, NCOL, ELEMENT> {
+        Matrix {
+            elements: repeat_with(|| rng.gen())
+                .take(NROW * NCOL)
+                .collect::<Vec<_>>(),
+        }
     }
 }
 
