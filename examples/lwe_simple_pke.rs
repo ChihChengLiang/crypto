@@ -1,32 +1,40 @@
 //! from https://www.di-mgt.com.au/lattice-lwe-simple-pke.html
 
-use std::iter::repeat;
-
 use crypto::{Matrix, PrimeField};
-use rand::{thread_rng, Rng};
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
-type F11 = PrimeField<11>;
-type VecF11 = Matrix<5, 1, F11>;
-type SecretKey = VecF11;
-type PublicKey = (Matrix<5, 5, F11>, VecF11);
+const Q: u64 = 31;
+// n
+const KEY_SIZE: usize = 4;
+// N
+const NOISE_SIZE: usize = 7;
+
+type Fq = PrimeField<Q>;
+type VecFq = Matrix<NOISE_SIZE, 1, Fq>;
+type SecretKey = Matrix<KEY_SIZE, 1, Fq>;
+type PublicKey = (Matrix<NOISE_SIZE, KEY_SIZE, Fq>, VecFq);
 type Message = bool;
-type Cipher = (VecF11, F11);
-
-const Q: u64 = 11;
+type Cipher = (Matrix<KEY_SIZE, 1, Fq>, Fq);
 
 fn key_gen<R: Rng + ?Sized>(rng: &mut R) -> (PublicKey, SecretKey) {
-    let sk: VecF11 = rng.gen();
-    let a: Matrix<5, 5, F11> = rng.gen();
-    let e: VecF11 = rng.gen();
+    let sk: SecretKey = rng.gen();
+    let a: Matrix<NOISE_SIZE, KEY_SIZE, Fq> = rng.gen();
+    // TODO: impl discrete gaussian for this one
+    let e: VecFq = rng.gen();
+    println!("e {e}");
     let b = a.clone() * sk.clone() + e;
     ((a, b), sk)
 }
 
 fn encrypt<R: Rng + ?Sized>(rng: &mut R, m: Message, pk: PublicKey) -> Cipher {
-    let r: VecF11 = rng.gen();
+    // Random binary vector
+    let r: Matrix<NOISE_SIZE, 1, PrimeField<2>> = rng.gen();
+    let r = r.map(|f2| f2.cast::<Q>());
+    println!("r {r}");
     let (a, b) = pk;
     let u = a.t() * r.clone();
-    let v = (b.t() * r)[(0, 0)].clone() + F11::from((Q >> 1) * Into::<u64>::into(m));
+    let v = (b.t() * r)[(0, 0)].clone() + Fq::from((Q >> 1) * Into::<u64>::into(m));
     (u, v)
 }
 
@@ -34,12 +42,12 @@ fn decrypt(c: Cipher, sk: SecretKey) -> Message {
     let (u, v) = c;
     let v_prime = (sk.t() * u)[(0, 0)].clone();
     let d = v - v_prime;
-    let m = ((F11::from(2) * d).round_2int(Q) % 2) == 1;
+    let m = ((Fq::from(2) * d).round_2int(Q) % 2) == 1;
     m
 }
 
 fn main() {
-    let mut rng = thread_rng();
+    let mut rng = ChaCha8Rng::seed_from_u64(123456);
     let (pk, sk) = key_gen(&mut rng);
     let (a, b) = pk.clone();
     println!("pk a {a} b {b} sk {sk}");

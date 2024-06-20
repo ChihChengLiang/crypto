@@ -43,6 +43,9 @@ impl<const P: u64> PrimeField<P> {
     pub fn round_2int(&self, q: u64) -> u64 {
         round_frac2int(self.n, q)
     }
+    pub fn cast<const Q: u64>(&self) -> PrimeField<Q> {
+        PrimeField::<Q> { n: self.n % Q }
+    }
 }
 impl<const P: u64> Display for PrimeField<P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

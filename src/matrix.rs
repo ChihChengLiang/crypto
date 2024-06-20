@@ -31,6 +31,11 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Zero + Clone> Matrix<NROW, N
             elements: elements.iter().map(|x| (*x).clone().into()).collect(),
         }
     }
+    pub fn map<T>(&self, f: fn(&ELEMENT) -> T) -> Matrix<NROW, NCOL, T> {
+        Matrix {
+            elements: self.elements.iter().map(f).collect::<Vec<_>>(),
+        }
+    }
 
     /// Transpose
     pub fn t(&self) -> Matrix<NCOL, NROW, ELEMENT> {
