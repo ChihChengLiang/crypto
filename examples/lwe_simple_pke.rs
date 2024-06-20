@@ -22,8 +22,8 @@ fn key_gen<R: Rng + ?Sized>(rng: &mut R) -> (PublicKey, SecretKey) {
     ((a, b), sk)
 }
 
-fn encrypt(m: Message, pk: PublicKey) -> Cipher {
-    let r: VecF11 = Matrix::new(&repeat(0).take(5).collect::<Vec<_>>());
+fn encrypt<R: Rng + ?Sized>(rng: &mut R, m: Message, pk: PublicKey) -> Cipher {
+    let r: VecF11 = rng.gen();
     let (a, b) = pk;
     let u = a.t() * r.clone();
     let v = (b.t() * r)[(0, 0)].clone() + F11::from((Q >> 1) * Into::<u64>::into(m));
@@ -41,9 +41,13 @@ fn decrypt(c: Cipher, sk: SecretKey) -> Message {
 fn main() {
     let mut rng = thread_rng();
     let (pk, sk) = key_gen(&mut rng);
-    println!("pk {pk:?} sk {sk}");
+    let (a, b) = pk.clone();
+    println!("pk a {a} b {b} sk {sk}");
     let m = rng.gen();
-    let cipher = encrypt(m, pk);
+    println!("message {}", m as u8);
+    let cipher = encrypt(&mut rng, m, pk);
+    let (u, v) = cipher.clone();
+    println!("cipher u {u} v {v}");
     let m_decrypted = decrypt(cipher, sk);
     assert_eq!(m, m_decrypted)
 }

@@ -47,13 +47,14 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Clone + Display> Display
     for Matrix<NROW, NCOL, ELEMENT>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "")?;
         writeln!(f, "[")?;
-        for row in self.elements.chunks_exact(NROW) {
+        for row in self.elements.chunks_exact(NCOL) {
             write!(f, "  [")?;
             for elem in row.iter() {
-                write!(f, "{elem}, ")?;
+                write!(f, " {elem} ")?;
             }
-            writeln!(f, "]\n")?;
+            writeln!(f, "]")?;
         }
 
         writeln!(f, "]")

@@ -46,7 +46,7 @@ impl<const P: u64> PrimeField<P> {
 }
 impl<const P: u64> Display for PrimeField<P> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "F{P}{{{}}}", self.n)
+        write!(f, "{}", self.n)
     }
 }
 
