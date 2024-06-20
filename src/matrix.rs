@@ -29,6 +29,17 @@ impl<const NROW: usize, const NCOL: usize, ELEMENT: Zero + Clone> Matrix<NROW, N
             elements: elements.iter().map(|x| (*x).clone().into()).collect(),
         }
     }
+
+    /// Transpose
+    pub fn t(&self) -> Matrix<NCOL, NROW, ELEMENT> {
+        let mut elements = vec![];
+        for new_row in 0..NCOL {
+            for new_col in 0..NROW {
+                elements.push(self[(new_col, new_row)].clone())
+            }
+        }
+        Matrix { elements }
+    }
 }
 impl<const NROW: usize, const NCOL: usize, ELEMENT: Clone + Display> Display
     for Matrix<NROW, NCOL, ELEMENT>
@@ -125,10 +136,12 @@ mod tests {
         type M = Matrix<2, 2, PrimeField<11>>;
         let matrix_a: M = Matrix::new(&[3, 4, 5, 6]);
         let matrix_b: M = Matrix::new(&[7, 8, 9, 10]);
+        let matrix_b_t: M = Matrix::new(&[7, 9, 8, 10]);
         let a_plus_b: M = Matrix::new(&[10, 1, 3, 5]);
         let a_mul_b = Matrix::new(&[2, 9, 1, 1]);
         println!("Matrix a {matrix_a}");
         assert_eq!(matrix_a.clone() + matrix_b.clone(), a_plus_b);
-        assert_eq!(matrix_a * matrix_b, a_mul_b)
+        assert_eq!(matrix_a * matrix_b.clone(), a_mul_b);
+        assert_eq!(matrix_b.t(), matrix_b_t);
     }
 }
