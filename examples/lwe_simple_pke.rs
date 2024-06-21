@@ -1,6 +1,6 @@
 //! from https://www.di-mgt.com.au/lattice-lwe-simple-pke.html
 
-use crypto::{Matrix, PrimeField};
+use crypto::{round_frac2int, Matrix, PrimeField};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rand_distr::Normal;
@@ -44,7 +44,7 @@ fn decrypt(c: Cipher, sk: SecretKey) -> Message {
     let (u, v) = c;
     let v_prime = (sk.t() * u)[(0, 0)].clone();
     let d = v - v_prime;
-    let m = ((Fq::from(2) * d).round_2int(Q) % 2) == 1;
+    let m = (round_frac2int(2 * d.get_n(), Q) % 2) == 1;
     m
 }
 

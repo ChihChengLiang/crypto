@@ -41,6 +41,10 @@ impl<const P: u64> PrimeField<P> {
         self.n <= tolerance
     }
 
+    pub fn get_n(&self) -> u64 {
+        self.n
+    }
+
     pub fn round_2int(&self, q: u64) -> u64 {
         round_frac2int(self.n, q)
     }
