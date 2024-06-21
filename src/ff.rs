@@ -4,6 +4,7 @@ use std::{
 };
 
 use rand::distributions::{Distribution, Standard, Uniform};
+use rand_distr::{num_traits::Float, Normal, StandardNormal};
 
 use crate::{
     common::{Raisable, Zero},
@@ -122,9 +123,29 @@ impl<const P: u64> Distribution<PrimeField<P>> for Standard {
     }
 }
 
+impl<const P: u64, F: Float> Distribution<PrimeField<P>> for Normal<F>
+where
+    StandardNormal: Distribution<F>,
+{
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> PrimeField<P> {
+        let value: F = rng.sample(self);
+        let value = value.round().to_f32().unwrap() as i32;
+        let value = if value < 0 {
+            let tmp = (-value) as u64 % P;
+            P - tmp
+        } else {
+            value as u64 % P
+        };
+        PrimeField::new(value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::iter;
+
+    use rand::{Rng, SeedableRng};
+    use rand_chacha::ChaCha8Rng;
 
     use super::*;
 
@@ -159,5 +180,21 @@ mod tests {
         for i in 0..11 {
             assert_eq!(fp11(i).check_tolerance(tolerance), [0, 1, 2,].contains(&i))
         }
+    }
+
+    #[test]
+    fn test_normal() {
+        let rng = ChaCha8Rng::seed_from_u64(123456);
+        let xs: Vec<PrimeField<31>> = rng
+            .sample_iter(Normal::<f32>::new(0.0, 1.0).unwrap())
+            .take(10)
+            .collect();
+        assert_eq!(
+            xs,
+            vec![1u64, 30, 0, 0, 0, 1, 29, 1, 0, 1]
+                .iter()
+                .map(|x| PrimeField::<31>::from(*x))
+                .collect::<Vec<_>>()
+        )
     }
 }
