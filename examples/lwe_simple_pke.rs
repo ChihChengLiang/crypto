@@ -3,12 +3,14 @@
 use crypto::{Matrix, PrimeField};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use rand_distr::Normal;
 
 const Q: u64 = 31;
 // n
 const KEY_SIZE: usize = 4;
 // N
 const NOISE_SIZE: usize = 7;
+const SIGMA: f64 = 1.0;
 
 type Fq = PrimeField<Q>;
 type VecFq = Matrix<NOISE_SIZE, 1, Fq>;
@@ -20,8 +22,8 @@ type Cipher = (Matrix<KEY_SIZE, 1, Fq>, Fq);
 fn key_gen<R: Rng + ?Sized>(rng: &mut R) -> (PublicKey, SecretKey) {
     let sk: SecretKey = rng.gen();
     let a: Matrix<NOISE_SIZE, KEY_SIZE, Fq> = rng.gen();
-    // TODO: impl discrete gaussian for this one
-    let e: VecFq = rng.gen();
+    let normal = Normal::<f64>::new(0.0, SIGMA).unwrap();
+    let e: VecFq = rng.sample(normal);
     println!("e {e}");
     let b = a.clone() * sk.clone() + e;
     ((a, b), sk)

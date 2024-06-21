@@ -5,6 +5,7 @@ use std::{
 };
 
 use rand::distributions::{Distribution, Standard};
+use rand_distr::{num_traits::Float, Normal, StandardNormal};
 
 use crate::common::Zero;
 
@@ -141,6 +142,21 @@ where
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Matrix<NROW, NCOL, ELEMENT> {
         Matrix {
             elements: repeat_with(|| rng.gen())
+                .take(NROW * NCOL)
+                .collect::<Vec<_>>(),
+        }
+    }
+}
+
+impl<const NROW: usize, const NCOL: usize, ELEMENT, F: Float>
+    Distribution<Matrix<NROW, NCOL, ELEMENT>> for Normal<F>
+where
+    StandardNormal: Distribution<F>,
+    Self: Distribution<ELEMENT>,
+{
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Matrix<NROW, NCOL, ELEMENT> {
+        Matrix {
+            elements: repeat_with(|| rng.sample(self))
                 .take(NROW * NCOL)
                 .collect::<Vec<_>>(),
         }
